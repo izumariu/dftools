@@ -1,0 +1,9 @@
+[package]
+name = "dftools"
+version = "0.1.0"
+authors = ["izumariu <marius.wuerker@t-online.de>"]
+
+[dependencies]
+reqwest = "0.9.5"
+regex = "1"
+zip = "0.5.0"
