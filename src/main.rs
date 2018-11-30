@@ -1,19 +1,21 @@
 extern crate reqwest;
 extern crate regex;
+extern crate zip;
 
 use regex::Regex;
 use std::env;
-use std::process;
+use std::io::BufReader;
+#[allow(unused_imports)] use std::process;
 
 fn main() {
 
     let target_dir = get_target_dir();
 
     for font in &get_fontnames() {
-        println!("'{}' ==[to_urlname]=> {}", font, to_urlname(&font));
+        eprintln!("'{}' ==[to_urlname]=> {}", font, to_urlname(&font));
+        let the_zip = get_zip(&font);
+        let br = BufReader::new(the_zip);
     }
-
-    eprintln!("{:?}", target_dir);
 
 }
 
@@ -24,13 +26,14 @@ fn is_root() -> bool {
 
         Ok(user) => (user == "root"),
         Err(_) => {
-            eprintln!("COULDN'T FETCH ENV[USER]");
-            process::exit(1);
+            eprintln!("E: COULDN'T FETCH ENV[USER]");
+            false
         },
 
     }
 
 }
+
 
 fn get_target_dir() -> String {
 
@@ -66,6 +69,7 @@ fn get_target_dir() -> String {
 
 }
 
+
 fn get_fontnames() -> Vec<String> {
 
     let mut outvec:Vec<String> = Vec::new();
@@ -87,13 +91,21 @@ fn get_fontnames() -> Vec<String> {
 
 }
 
-fn to_urlname(before: &String) -> String { // TAKES OWNERSHIP!!
+
+fn to_urlname(before: &String) -> String {
 
     let re = Regex::new(r"\s+").unwrap();
     let lc = before.to_ascii_lowercase();
     let result = re.replace_all(lc.as_str(), "_");
-    let mut out = String::from(result);
-    out.push_str(".font");
-    out
+    String::from(result)
 
+}
+
+fn get_zip(before: &String) -> String {
+    let urlname = to_urlname(before);
+    let body = reqwest::get(format!("https://dl.dafont.com/dl/?f={}", &urlname).as_str())
+        .expect(&format!("FAIL#performGet @ GET {}", &urlname))
+        .text()
+        .expect(&format!("FAIL#extractBody @ GET {}", &urlname));
+    body
 }
